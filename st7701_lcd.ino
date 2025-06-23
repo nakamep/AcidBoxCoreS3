@@ -2,6 +2,8 @@
 
 #if defined(ARDUINO_M5STACK_CORES3) || defined(M5STACK_CORES3)
 
+#include "esp_heap_caps.h"
+
 // Simple 5x7 font bitmap (ASCII 32-126)
 static const uint8_t font5x7[] PROGMEM = {
     0x00, 0x00, 0x00, 0x00, 0x00, // space
@@ -73,10 +75,17 @@ ST7701_LCD::ST7701_LCD() :
     _cursor_y(0),
     _text_color(LCD_WHITE),
     _text_size(1),
-    _rotation(LCD_ROTATION) {
+    _rotation(LCD_ROTATION),
+    _fillRectMutex(nullptr) {
 }
 
 bool ST7701_LCD::begin() {
+    // Initialize thread safety mutex for fillRect
+    _fillRectMutex = xSemaphoreCreateMutex();
+    if (_fillRectMutex == nullptr) {
+        return false;
+    }
+    
     // Initialize SPI
     _spi = &SPI;
     
@@ -285,37 +294,68 @@ void ST7701_LCD::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
     if (y + h > _height) h = _height - y;
     if (w <= 0 || h <= 0) return;
     
-    setAddressWindow(x, y, w, h);
-    uint32_t pixels = (uint32_t)w * h;
-    
-    // Optimized for performance: larger buffer for fewer SPI transactions  
-    const uint16_t BUFFER_SIZE = 512; // 1024 bytes buffer (512 pixels) - 4x larger than original
-    static uint8_t buffer[BUFFER_SIZE * 2]; // Static allocation to avoid stack overhead
-    
-    // Pre-calculate color bytes (swapped for ST7701)
-    uint8_t color_hi = color >> 8;
-    uint8_t color_lo = color & 0xFF;
-    
-    // Pre-fill the entire buffer once - this is much more efficient for repeated operations
-    for (uint16_t i = 0; i < BUFFER_SIZE * 2; i += 2) {
-        buffer[i] = color_hi;
-        buffer[i + 1] = color_lo;
+    // Thread safety: acquire mutex before accessing static buffer
+    if (_fillRectMutex != nullptr && xSemaphoreTake(_fillRectMutex, portMAX_DELAY) == pdTRUE) {
+        // Calculate buffer size based on available memory
+        const uint16_t BUFFER_SIZE = LCD_FILLRECT_BUFFER_SIZE; // Configurable from config.h
+        
+        // Check available heap and fall back to smaller buffer if needed
+        uint16_t actual_buffer_size = BUFFER_SIZE;
+        size_t free_heap = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
+        if (free_heap < (BUFFER_SIZE * 2 + 4096)) { // Reserve 4KB safety margin
+            actual_buffer_size = (free_heap > 4096) ? (free_heap - 4096) / 2 : 128; // Fallback to 128 pixels minimum
+        }
+        
+        // Static allocation for better performance (protected by mutex)
+        static uint8_t buffer[LCD_FILLRECT_BUFFER_SIZE * 2];
+        
+        setAddressWindow(x, y, w, h);
+        uint32_t pixels = (uint32_t)w * h;
+        
+        // Pre-calculate color bytes (swapped for ST7701)
+        uint8_t color_hi = color >> 8;
+        uint8_t color_lo = color & 0xFF;
+        
+        // Pre-fill the buffer once - more efficient for repeated operations
+        for (uint16_t i = 0; i < actual_buffer_size * 2; i += 2) {
+            buffer[i] = color_hi;
+            buffer[i + 1] = color_lo;
+        }
+        
+        // Single SPI transaction for entire fillRect operation
+        _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
+        digitalWrite(LCD_CS_PIN, LOW);
+        digitalWrite(LCD_DC_PIN, HIGH); // Data mode
+        
+        // Batched transfers with dynamically sized buffer
+        while (pixels > 0) {
+            uint16_t batch_size = (pixels > actual_buffer_size) ? actual_buffer_size : pixels;
+            _spi->transferBytes(buffer, nullptr, batch_size * 2);
+            pixels -= batch_size;
+        }
+        
+        digitalWrite(LCD_CS_PIN, HIGH);
+        _spi->endTransaction();
+        
+        // Release the mutex
+        xSemaphoreGive(_fillRectMutex);
+    } else {
+        // Fallback: single pixel writes if mutex is unavailable
+        setAddressWindow(x, y, w, h);
+        uint32_t pixels = (uint32_t)w * h;
+        
+        _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
+        digitalWrite(LCD_CS_PIN, LOW);
+        digitalWrite(LCD_DC_PIN, HIGH);
+        
+        for (uint32_t i = 0; i < pixels; i++) {
+            _spi->transfer(color >> 8);
+            _spi->transfer(color & 0xFF);
+        }
+        
+        digitalWrite(LCD_CS_PIN, HIGH);
+        _spi->endTransaction();
     }
-    
-    // Single SPI transaction for entire fillRect operation
-    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
-    digitalWrite(LCD_CS_PIN, LOW);
-    digitalWrite(LCD_DC_PIN, HIGH); // Data mode
-    
-    // Batched transfers with larger buffer size
-    while (pixels > 0) {
-        uint16_t batch_size = (pixels > BUFFER_SIZE) ? BUFFER_SIZE : pixels;
-        _spi->transferBytes(buffer, nullptr, batch_size * 2);
-        pixels -= batch_size;
-    }
-    
-    digitalWrite(LCD_CS_PIN, HIGH);
-    _spi->endTransaction();
 }
 
 void ST7701_LCD::setCursor(int16_t x, int16_t y) {

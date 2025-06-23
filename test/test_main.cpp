@@ -9,6 +9,11 @@ void test_lcd_fillrect_performance();
 void test_lcd_fillrect_multiple_operations();
 void test_lcd_fillrect_partial_areas();
 
+// Forward declarations from test_fillrect_thread.cpp
+void test_fillrect_thread_safety_detection();
+void test_fillrect_buffer_overrun_protection();
+void test_fillrect_memory_boundary_conditions();
+
 // For native testing, provide simple Arduino-like defines
 #ifndef UNIT_TEST
 #define UNIT_TEST
@@ -130,6 +135,11 @@ void setup() {
     RUN_TEST(test_lcd_fillrect_multiple_operations);
     RUN_TEST(test_lcd_fillrect_partial_areas);
     
+    // ST7701 LCD thread safety tests
+    RUN_TEST(test_fillrect_thread_safety_detection);
+    RUN_TEST(test_fillrect_buffer_overrun_protection);
+    RUN_TEST(test_fillrect_memory_boundary_conditions);
+    
     UNITY_END();
 }
 
@@ -159,6 +169,11 @@ int main() {
     RUN_TEST(test_lcd_fillrect_performance);
     RUN_TEST(test_lcd_fillrect_multiple_operations);
     RUN_TEST(test_lcd_fillrect_partial_areas);
+    
+    // ST7701 LCD thread safety tests
+    RUN_TEST(test_fillrect_thread_safety_detection);
+    RUN_TEST(test_fillrect_buffer_overrun_protection);
+    RUN_TEST(test_fillrect_memory_boundary_conditions);
     
     return UNITY_END();
 }

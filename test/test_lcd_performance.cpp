@@ -14,6 +14,7 @@ private:
     static const int LCD_WIDTH = 320;
     static const int LCD_HEIGHT = 240;
     static const int BUFFER_SIZE = 512; // Match optimized implementation
+    static const int SPI_SIMULATION_CYCLES_PER_BYTE = 10; // CPU cycles to simulate SPI delay
     
     // Simulate SPI transfer delay
     void simulateSpiDelay(uint32_t bytes) {
@@ -21,7 +22,7 @@ private:
         // At 8MHz SPI, each byte takes ~1.25 microseconds
         // Add minimal processing overhead
         volatile uint32_t dummy = 0;
-        for (uint32_t i = 0; i < bytes * 10; i++) {
+        for (uint32_t i = 0; i < bytes * SPI_SIMULATION_CYCLES_PER_BYTE; i++) {
             dummy += i; // Simulate some CPU work
         }
     }

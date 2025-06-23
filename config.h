@@ -101,6 +101,10 @@ const float ONE_DIV_TWOPI = 1.0f/TWOPI;
 #define CH_NUMBER  6 // closed hat instrument number in kit (for groupping, zero-based)
 #define OH_NUMBER  7 // open hat instrument number in kit (for groupping, zero-based)
 
+// LCD fillRect buffer configuration (M5Stack Core S3 only)
+// Larger buffer = fewer SPI transactions = better performance, but uses more memory
+#define LCD_FILLRECT_BUFFER_SIZE 512  // pixels (1024 bytes total for RGB565)
+
 #ifdef NO_PSRAM
   #define RAM_SAMPLER_CACHE  40000    // bytes, compact sample set is 132kB, first 8 samples is ~38kB
   #define DEFAULT_DRUMKIT 4           // /data/4/ folder

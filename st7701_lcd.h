@@ -6,6 +6,8 @@
 #if defined(ARDUINO_M5STACK_CORES3) || defined(M5STACK_CORES3)
 
 #include <SPI.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 // ST7701 LCD Driver for M5Stack Core S3
 // M5Stack Core S3 LCD: 2.0" 320x240 IPS display with ST7701 controller
@@ -96,6 +98,9 @@ private:
     uint16_t _text_color;
     uint8_t _text_size;
     uint8_t _rotation;
+    
+    // Thread safety for fillRect operation
+    SemaphoreHandle_t _fillRectMutex;
     
     // Low-level SPI functions
     void writeCommand(uint8_t cmd);
