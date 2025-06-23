@@ -11,15 +11,21 @@ AcidBox is an ESP32-based audio synthesizer project that implements a combinatio
 - ESP32 or ESP32-S3 with at least 4MB PSRAM (ESP32 WROVER module recommended)
 - External DAC like PCM5102 (highly recommended for quality)
 - Compatible with both regular ESP32 and ESP32-S3 variants
+- **M5Stack Core S3 supported** with specific pin configurations
 
 ## Development Environment
 
 This is an Arduino IDE project (tested with v1.8.20) for ESP32/ESP32-S3 microcontrollers.
 
 ### Board Configuration (Arduino IDE)
-- Board: ESP32 Dev Module (or ESP32S3 Dev Module for S3)
+- Board: ESP32 Dev Module (or ESP32S3 Dev Module for S3, or M5Stack Core S3 for M5Stack boards)
 - Partition scheme: No OTA (1MB APP/ 3MB SPIFFS)
 - PSRAM: enabled (or appropriate PSRAM type)
+
+### PlatformIO Configuration
+- `pio run -e esp32`: Build for ESP32
+- `pio run -e esp32s3`: Build for generic ESP32-S3
+- `pio run -e m5stack-cores3`: Build for M5Stack Core S3 (includes M5STACK_CORES3 define)
 
 ### Dependencies
 - MIDI Library: https://github.com/FortySevenEffects/arduino_midi_library

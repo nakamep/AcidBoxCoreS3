@@ -28,11 +28,22 @@
 #define MIDITX_PIN      15      // this pin will be used for output (not implemented yet) when MIDI_VIA_SERIAL2 defined
 
 #define POT_NUM 3
+
+// Pin definitions for different ESP32 variants and boards
 #if defined(CONFIG_IDF_TARGET_ESP32S3)
-#define I2S_BCLK_PIN    5       // I2S BIT CLOCK pin (BCL BCK CLK)
-#define I2S_WCLK_PIN    7       // I2S WORD CLOCK pin (WCK WCL LCK)
-#define I2S_DOUT_PIN    6       // to I2S DATA IN pin (DIN D DAT)
-const uint8_t POT_PINS[POT_NUM] = {15, 16, 17};
+  #if defined(ARDUINO_M5STACK_CORES3) || defined(M5STACK_CORES3)
+    // M5Stack Core S3 specific pin configuration
+    #define I2S_BCLK_PIN    12      // I2S BIT CLOCK pin (BCL BCK CLK)
+    #define I2S_WCLK_PIN    0       // I2S WORD CLOCK pin (WCK WCL LCK)
+    #define I2S_DOUT_PIN    2       // to I2S DATA IN pin (DIN D DAT)
+    const uint8_t POT_PINS[POT_NUM] = {1, 3, 8};  // Available GPIO pins on M5Stack Core S3
+  #else
+    // Generic ESP32-S3 pin configuration
+    #define I2S_BCLK_PIN    5       // I2S BIT CLOCK pin (BCL BCK CLK)
+    #define I2S_WCLK_PIN    7       // I2S WORD CLOCK pin (WCK WCL LCK)
+    #define I2S_DOUT_PIN    6       // to I2S DATA IN pin (DIN D DAT)
+    const uint8_t POT_PINS[POT_NUM] = {15, 16, 17};
+  #endif
 #elif defined(CONFIG_IDF_TARGET_ESP32)
 #define I2S_BCLK_PIN    5       // I2S BIT CLOCK pin (BCL BCK CLK)
 #define I2S_WCLK_PIN    19      // I2S WORD CLOCK pin (WCK WCL LCK)
