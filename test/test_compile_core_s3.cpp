@@ -46,6 +46,7 @@ void setup() {
     RUN_TEST(test_st7701_color_definitions);
     RUN_TEST(test_st7701_global_instance);
     RUN_TEST(test_st7701_commands);
+    RUN_TEST(test_st7701_writedata16_byte_order);
     
     UNITY_END();
 }
@@ -67,6 +68,7 @@ int main() {
     RUN_TEST(test_st7701_color_definitions);
     RUN_TEST(test_st7701_global_instance);
     RUN_TEST(test_st7701_commands);
+    RUN_TEST(test_st7701_writedata16_byte_order);
     
     return UNITY_END();
 }

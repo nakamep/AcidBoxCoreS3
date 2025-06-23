@@ -23,6 +23,11 @@
 #define LCD_HEIGHT      240
 #define LCD_ROTATION    1   // Default rotation (landscape)
 
+// SPI Configuration
+#ifndef ST7701_SPI_SPEED
+#define ST7701_SPI_SPEED 8000000  // 8MHz default (can be overridden)
+#endif
+
 // ST7701 Commands
 #define ST7701_NOP      0x00
 #define ST7701_SWRESET  0x01

@@ -79,6 +79,12 @@ ST7701_LCD::ST7701_LCD() :
 bool ST7701_LCD::begin() {
     // Initialize SPI
     _spi = &SPI;
+    
+    // Check if SPI initialization succeeds
+    if (!_spi) {
+        return false;
+    }
+    
     _spi->begin(LCD_SCK_PIN, -1, LCD_MOSI_PIN, LCD_CS_PIN); // SCK, MISO, MOSI, SS
     
     // Initialize control pins
@@ -86,6 +92,14 @@ bool ST7701_LCD::begin() {
     pinMode(LCD_RST_PIN, OUTPUT);
     pinMode(LCD_BL_PIN, OUTPUT);
     pinMode(LCD_CS_PIN, OUTPUT);
+    
+    // Verify pins are set correctly
+    if (digitalRead(LCD_DC_PIN) == HIGH) {
+        digitalWrite(LCD_DC_PIN, LOW);
+    }
+    if (digitalRead(LCD_CS_PIN) == LOW) {
+        digitalWrite(LCD_CS_PIN, HIGH);
+    }
     
     // Reset display
     reset();
@@ -141,7 +155,7 @@ void ST7701_LCD::initDisplay() {
 }
 
 void ST7701_LCD::writeCommand(uint8_t cmd) {
-    _spi->beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
     digitalWrite(LCD_CS_PIN, LOW);
     digitalWrite(LCD_DC_PIN, LOW);  // Command mode
     _spi->transfer(cmd);
@@ -150,7 +164,7 @@ void ST7701_LCD::writeCommand(uint8_t cmd) {
 }
 
 void ST7701_LCD::writeData(uint8_t data) {
-    _spi->beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
     digitalWrite(LCD_CS_PIN, LOW);
     digitalWrite(LCD_DC_PIN, HIGH); // Data mode
     _spi->transfer(data);
@@ -159,16 +173,18 @@ void ST7701_LCD::writeData(uint8_t data) {
 }
 
 void ST7701_LCD::writeData16(uint16_t data) {
-    _spi->beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
     digitalWrite(LCD_CS_PIN, LOW);
     digitalWrite(LCD_DC_PIN, HIGH); // Data mode
-    _spi->transfer16(data);
+    // Fix byte order for ST7701 - swap bytes before transfer
+    _spi->transfer(data >> 8);   // Send high byte first
+    _spi->transfer(data & 0xFF); // Send low byte second
     digitalWrite(LCD_CS_PIN, HIGH);
     _spi->endTransaction();
 }
 
 void ST7701_LCD::writeDataBytes(uint8_t* data, uint32_t len) {
-    _spi->beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
     digitalWrite(LCD_CS_PIN, LOW);
     digitalWrite(LCD_DC_PIN, HIGH); // Data mode
     _spi->transferBytes(data, nullptr, len);
@@ -248,10 +264,8 @@ void ST7701_LCD::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) 
     if (x + w > _width) w = _width - x;
     if (w <= 0) return;
     
-    setAddressWindow(x, y, w, 1);
-    for (int16_t i = 0; i < w; i++) {
-        writeData16(color);
-    }
+    // Use optimized fillRect for better performance
+    fillRect(x, y, w, 1, color);
 }
 
 void ST7701_LCD::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
@@ -260,10 +274,8 @@ void ST7701_LCD::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) 
     if (y + h > _height) h = _height - y;
     if (h <= 0) return;
     
-    setAddressWindow(x, y, 1, h);
-    for (int16_t i = 0; i < h; i++) {
-        writeData16(color);
-    }
+    // Use optimized fillRect for better performance
+    fillRect(x, y, 1, h, color);
 }
 
 void ST7701_LCD::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
@@ -275,9 +287,32 @@ void ST7701_LCD::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
     
     setAddressWindow(x, y, w, h);
     uint32_t pixels = (uint32_t)w * h;
-    for (uint32_t i = 0; i < pixels; i++) {
-        writeData16(color);
+    
+    // Optimize for performance: batch SPI transfers
+    const uint16_t BUFFER_SIZE = 128; // 256 bytes buffer (128 pixels)
+    uint8_t buffer[BUFFER_SIZE * 2]; // 2 bytes per pixel (RGB565)
+    
+    // Pre-fill buffer with color data (swapped bytes for ST7701)
+    uint8_t color_hi = color >> 8;
+    uint8_t color_lo = color & 0xFF;
+    for (uint16_t i = 0; i < BUFFER_SIZE * 2; i += 2) {
+        buffer[i] = color_hi;
+        buffer[i + 1] = color_lo;
     }
+    
+    // Use efficient batched transfers
+    _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
+    digitalWrite(LCD_CS_PIN, LOW);
+    digitalWrite(LCD_DC_PIN, HIGH); // Data mode
+    
+    while (pixels > 0) {
+        uint16_t batch_size = (pixels > BUFFER_SIZE) ? BUFFER_SIZE : pixels;
+        _spi->transferBytes(buffer, nullptr, batch_size * 2);
+        pixels -= batch_size;
+    }
+    
+    digitalWrite(LCD_CS_PIN, HIGH);
+    _spi->endTransaction();
 }
 
 void ST7701_LCD::setCursor(int16_t x, int16_t y) {
@@ -294,7 +329,12 @@ void ST7701_LCD::setTextSize(uint8_t size) {
 }
 
 void ST7701_LCD::drawChar(int16_t x, int16_t y, char c, uint16_t color, uint8_t size) {
-    if (c < 32 || c > 126) return; // Only printable ASCII
+    // UTF-8 fallback: skip non-ASCII gracefully, render '?' for invalid chars
+    if (c < 32) return; // Skip control characters
+    if (c > 126) {
+        // For non-ASCII UTF-8 characters, render '?' as fallback
+        c = '?';
+    }
     
     uint8_t char_index = c - 32;
     const uint8_t* char_data = &font5x7[char_index * 5];
