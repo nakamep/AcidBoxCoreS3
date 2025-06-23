@@ -239,7 +239,6 @@ void test_fillrect_memory_boundary_conditions() {
     TEST_ASSERT_TRUE_MESSAGE(true, "Memory boundary test completed on Arduino");
 }
 
-#ifdef ARDUINO
 void setup() {
     delay(2000);
     UNITY_BEGIN();
@@ -250,14 +249,5 @@ void setup() {
 }
 
 void loop() {}
-#else
-int main() {
-    UNITY_BEGIN();
-    RUN_TEST(test_fillrect_thread_safety_detection);
-    RUN_TEST(test_fillrect_buffer_overrun_protection);
-    RUN_TEST(test_fillrect_memory_boundary_conditions);
-    return UNITY_END();
-}
-#endif
 
 #endif

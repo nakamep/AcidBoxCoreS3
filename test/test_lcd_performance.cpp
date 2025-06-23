@@ -171,7 +171,6 @@ void test_lcd_fillrect_partial_areas() {
     TEST_ASSERT_TRUE(true); // Performance test only runs on native
 }
 
-#ifdef ARDUINO
 void setup() {
     delay(2000);
     UNITY_BEGIN();
@@ -182,14 +181,5 @@ void setup() {
 }
 
 void loop() {}
-#else
-int main() {
-    UNITY_BEGIN();
-    RUN_TEST(test_lcd_fillrect_performance);
-    RUN_TEST(test_lcd_fillrect_multiple_operations);
-    RUN_TEST(test_lcd_fillrect_partial_areas);
-    return UNITY_END();
-}
-#endif
 
 #endif
