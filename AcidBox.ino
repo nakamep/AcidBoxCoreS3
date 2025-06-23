@@ -30,6 +30,11 @@
 #include "sampler.h"
 #include <Wire.h>
 
+// LCD driver for M5Stack Core S3
+#if defined(ARDUINO_M5STACK_CORES3) || defined(M5STACK_CORES3)
+#include "st7701_lcd.h"
+#endif
+
 
 // =============================================================== MIDI interfaces ===============================================================
 
@@ -273,6 +278,24 @@ void setup(void) {
   Comp.Init(SAMPLE_RATE);
 #ifdef JUKEBOX
   init_midi(); // AcidBanger function
+#endif
+
+  // Initialize LCD for M5Stack Core S3
+#if defined(ARDUINO_M5STACK_CORES3) || defined(M5STACK_CORES3)
+  if (lcd.begin()) {
+    lcd.fillScreen(LCD_BLACK);
+    lcd.setTextColor(LCD_WHITE);
+    lcd.setTextSize(2);
+    lcd.setCursor(10, 10);
+    lcd.println("AcidBox Core S3");
+    lcd.setCursor(10, 30);
+    lcd.println("ESP32 Acid Synth");
+    lcd.setCursor(10, 60);
+    lcd.println("Initializing...");
+    DEBUG("LCD initialized successfully");
+  } else {
+    DEBUG("LCD initialization failed");
+  }
 #endif
 
   // silence while we haven't loaded anything reasonable
