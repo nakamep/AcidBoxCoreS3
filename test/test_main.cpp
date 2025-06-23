@@ -9,6 +9,11 @@ void test_lcd_fillrect_performance();
 void test_lcd_fillrect_multiple_operations();
 void test_lcd_fillrect_partial_areas();
 
+// Forward declarations from test_fillrect_performance.cpp
+void test_fillrect_fullscreen_performance();
+void test_fillrect_performance_consistency();
+void test_fillrect_large_area_performance();
+
 // Forward declarations from test_fillrect_thread.cpp
 void test_fillrect_thread_safety_detection();
 void test_fillrect_buffer_overrun_protection();
@@ -135,6 +140,11 @@ void setup() {
     RUN_TEST(test_lcd_fillrect_multiple_operations);
     RUN_TEST(test_lcd_fillrect_partial_areas);
     
+    // fillRect performance tests (50ms threshold)
+    RUN_TEST(test_fillrect_fullscreen_performance);
+    RUN_TEST(test_fillrect_performance_consistency);
+    RUN_TEST(test_fillrect_large_area_performance);
+    
     // ST7701 LCD thread safety tests
     RUN_TEST(test_fillrect_thread_safety_detection);
     RUN_TEST(test_fillrect_buffer_overrun_protection);
@@ -169,6 +179,11 @@ int main() {
     RUN_TEST(test_lcd_fillrect_performance);
     RUN_TEST(test_lcd_fillrect_multiple_operations);
     RUN_TEST(test_lcd_fillrect_partial_areas);
+    
+    // fillRect performance tests (50ms threshold)
+    RUN_TEST(test_fillrect_fullscreen_performance);
+    RUN_TEST(test_fillrect_performance_consistency);
+    RUN_TEST(test_fillrect_large_area_performance);
     
     // ST7701 LCD thread safety tests
     RUN_TEST(test_fillrect_thread_safety_detection);
