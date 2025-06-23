@@ -4,6 +4,11 @@
 #include <cstdlib>
 #include "test_st7701_lcd.h"
 
+// Include LCD performance tests for native environment
+#ifndef ARDUINO
+#include "test_lcd_performance.cpp"
+#endif
+
 // For native testing, provide simple Arduino-like defines
 #ifndef UNIT_TEST
 #define UNIT_TEST
@@ -120,6 +125,16 @@ void setup() {
     RUN_TEST(test_st7701_commands);
     RUN_TEST(test_st7701_writedata16_byte_order);
     
+    // LCD Performance tests (native environment only for realistic timing)
+    #ifndef ARDUINO
+    RUN_TEST(test_mock_lcd_basic_functionality);
+    RUN_TEST(test_lcd_boundary_conditions);
+    RUN_TEST(test_lcd_fillrect_full_screen_performance);
+    RUN_TEST(test_lcd_fillscreen_performance);
+    RUN_TEST(test_lcd_multiple_fillrect_operations);
+    RUN_TEST(test_lcd_partial_screen_performance);
+    #endif
+    
     UNITY_END();
 }
 
@@ -144,6 +159,16 @@ int main() {
     RUN_TEST(test_st7701_global_instance);
     RUN_TEST(test_st7701_commands);
     RUN_TEST(test_st7701_writedata16_byte_order);
+    
+    // LCD Performance tests (native environment only for realistic timing)
+    #ifndef ARDUINO
+    RUN_TEST(test_mock_lcd_basic_functionality);
+    RUN_TEST(test_lcd_boundary_conditions);
+    RUN_TEST(test_lcd_fillrect_full_screen_performance);
+    RUN_TEST(test_lcd_fillscreen_performance);
+    RUN_TEST(test_lcd_multiple_fillrect_operations);
+    RUN_TEST(test_lcd_partial_screen_performance);
+    #endif
     
     return UNITY_END();
 }

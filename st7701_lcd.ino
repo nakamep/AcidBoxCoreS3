@@ -288,9 +288,9 @@ void ST7701_LCD::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
     setAddressWindow(x, y, w, h);
     uint32_t pixels = (uint32_t)w * h;
     
-    // Optimize for performance: batch SPI transfers
-    const uint16_t BUFFER_SIZE = 128; // 256 bytes buffer (128 pixels)
-    uint8_t buffer[BUFFER_SIZE * 2]; // 2 bytes per pixel (RGB565)
+    // Optimize for performance: use larger buffer and static allocation
+    const uint16_t BUFFER_SIZE = 512; // 1024 bytes buffer (512 pixels) - 4x larger than before
+    static uint8_t buffer[BUFFER_SIZE * 2]; // 2 bytes per pixel (RGB565), static allocation
     
     // Pre-fill buffer with color data (swapped bytes for ST7701)
     uint8_t color_hi = color >> 8;
