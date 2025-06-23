@@ -1,3 +1,8 @@
+# ---- TEMPORARILY DISABLE CLAUDE CODE REVIEW ----
+# remove or set `false` → `true` to re-enable later
+if: ${{ false }}
+# -----------------------------------------------
+
 name: Claude Code Review
 
 on:
