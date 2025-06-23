@@ -4,6 +4,11 @@
 #include <cstdlib>
 #include "test_st7701_lcd.h"
 
+// Forward declarations from test_lcd_performance.cpp
+void test_lcd_fillrect_performance();
+void test_lcd_fillrect_multiple_operations();
+void test_lcd_fillrect_partial_areas();
+
 // For native testing, provide simple Arduino-like defines
 #ifndef UNIT_TEST
 #define UNIT_TEST
@@ -120,6 +125,11 @@ void setup() {
     RUN_TEST(test_st7701_commands);
     RUN_TEST(test_st7701_writedata16_byte_order);
     
+    // ST7701 LCD performance tests
+    RUN_TEST(test_lcd_fillrect_performance);
+    RUN_TEST(test_lcd_fillrect_multiple_operations);
+    RUN_TEST(test_lcd_fillrect_partial_areas);
+    
     UNITY_END();
 }
 
@@ -144,6 +154,11 @@ int main() {
     RUN_TEST(test_st7701_global_instance);
     RUN_TEST(test_st7701_commands);
     RUN_TEST(test_st7701_writedata16_byte_order);
+    
+    // ST7701 LCD performance tests
+    RUN_TEST(test_lcd_fillrect_performance);
+    RUN_TEST(test_lcd_fillrect_multiple_operations);
+    RUN_TEST(test_lcd_fillrect_partial_areas);
     
     return UNITY_END();
 }

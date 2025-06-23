@@ -288,23 +288,26 @@ void ST7701_LCD::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c
     setAddressWindow(x, y, w, h);
     uint32_t pixels = (uint32_t)w * h;
     
-    // Optimize for performance: batch SPI transfers
-    const uint16_t BUFFER_SIZE = 128; // 256 bytes buffer (128 pixels)
-    uint8_t buffer[BUFFER_SIZE * 2]; // 2 bytes per pixel (RGB565)
+    // Optimized for performance: larger buffer for fewer SPI transactions  
+    const uint16_t BUFFER_SIZE = 512; // 1024 bytes buffer (512 pixels) - 4x larger than original
+    static uint8_t buffer[BUFFER_SIZE * 2]; // Static allocation to avoid stack overhead
     
-    // Pre-fill buffer with color data (swapped bytes for ST7701)
+    // Pre-calculate color bytes (swapped for ST7701)
     uint8_t color_hi = color >> 8;
     uint8_t color_lo = color & 0xFF;
+    
+    // Pre-fill the entire buffer once - this is much more efficient for repeated operations
     for (uint16_t i = 0; i < BUFFER_SIZE * 2; i += 2) {
         buffer[i] = color_hi;
         buffer[i + 1] = color_lo;
     }
     
-    // Use efficient batched transfers
+    // Single SPI transaction for entire fillRect operation
     _spi->beginTransaction(SPISettings(ST7701_SPI_SPEED, MSBFIRST, SPI_MODE0));
     digitalWrite(LCD_CS_PIN, LOW);
     digitalWrite(LCD_DC_PIN, HIGH); // Data mode
     
+    // Batched transfers with larger buffer size
     while (pixels > 0) {
         uint16_t batch_size = (pixels > BUFFER_SIZE) ? BUFFER_SIZE : pixels;
         _spi->transferBytes(buffer, nullptr, batch_size * 2);
