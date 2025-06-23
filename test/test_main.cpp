@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <cstdlib>
+#include "test_st7701_lcd.h"
 
 // For native testing, provide simple Arduino-like defines
 #ifndef UNIT_TEST
@@ -111,6 +112,13 @@ void setup() {
     RUN_TEST(test_linear_interpolation);
     RUN_TEST(test_midi_cc_conversion);
     
+    // ST7701 LCD tests
+    RUN_TEST(test_st7701_compilation);
+    RUN_TEST(test_st7701_constants);
+    RUN_TEST(test_st7701_color_definitions);
+    RUN_TEST(test_st7701_global_instance);
+    RUN_TEST(test_st7701_commands);
+    
     UNITY_END();
 }
 
@@ -127,6 +135,13 @@ int main() {
     RUN_TEST(test_audio_normalization);
     RUN_TEST(test_linear_interpolation);
     RUN_TEST(test_midi_cc_conversion);
+    
+    // ST7701 LCD tests
+    RUN_TEST(test_st7701_compilation);
+    RUN_TEST(test_st7701_constants);
+    RUN_TEST(test_st7701_color_definitions);
+    RUN_TEST(test_st7701_global_instance);
+    RUN_TEST(test_st7701_commands);
     
     return UNITY_END();
 }

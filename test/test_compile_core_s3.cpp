@@ -1,4 +1,5 @@
 #include <unity.h>
+#include "test_st7701_lcd.h"
 
 // Dummy tests for Core S3 compilation verification
 // These tests always pass to ensure build job is triggered and succeeds
@@ -39,6 +40,13 @@ void setup() {
     RUN_TEST(test_core_s3_defines);
     RUN_TEST(test_core_s3_basic_math);
     
+    // ST7701 LCD tests specific to Core S3
+    RUN_TEST(test_st7701_compilation);
+    RUN_TEST(test_st7701_constants);
+    RUN_TEST(test_st7701_color_definitions);
+    RUN_TEST(test_st7701_global_instance);
+    RUN_TEST(test_st7701_commands);
+    
     UNITY_END();
 }
 
@@ -52,6 +60,13 @@ int main() {
     RUN_TEST(test_core_s3_compilation);
     RUN_TEST(test_core_s3_defines);
     RUN_TEST(test_core_s3_basic_math);
+    
+    // ST7701 LCD tests specific to Core S3
+    RUN_TEST(test_st7701_compilation);
+    RUN_TEST(test_st7701_constants);
+    RUN_TEST(test_st7701_color_definitions);
+    RUN_TEST(test_st7701_global_instance);
+    RUN_TEST(test_st7701_commands);
     
     return UNITY_END();
 }
